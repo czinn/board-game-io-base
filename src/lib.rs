@@ -1,6 +1,8 @@
-mod error;
-mod result;
-mod game;
+pub mod error;
+pub mod result;
+pub mod game;
+pub mod user_id;
+pub mod game_room;
 
 #[cfg(test)]
 mod tests {
