@@ -5,5 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "board_game_io_base"
+path = "src/lib.rs"
+
+[[bin]]
+name = "generate_typescript_files"
+path = "src/generate_typescript_files.rs"
+
 [dependencies]
 thiserror = "1.0.37"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+typescript-definitions = { git = "https://github.com/onelson/typescript-definitions", branch = "no-debug-attrs"}
