@@ -10,7 +10,6 @@ use futures_util::{SinkExt, StreamExt};
 use crate::game::Game;
 
 pub struct Server<T: Game + Send + Sync> {
-    addr: String,
     game_type: PhantomData<T>,
 }
 

@@ -17,6 +17,7 @@ pub enum RoomState<T: Game> {
 }
 
 pub struct Room<T: Game> {
+    #[allow(dead_code)]
     id: RoomId,
     // First user is the lobby leader
     users: Vec<UserId>,
