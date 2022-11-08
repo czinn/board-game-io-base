@@ -11,7 +11,7 @@ pub enum RoomState<T: Game> {
         config: T::Config,
     },
     Game {
-        game_state: T::State,
+        game_state: T,
         player_mapping: HashMap<UserId, PlayerId>,
     },
 }
@@ -87,7 +87,7 @@ impl<T: Game> Room<T> {
                 }
                 None => (),
             }
-            let game_state = T::create(&config)?;
+            let game_state = T::new(&config)?;
             let players = HashSet::<PlayerId>::from_iter(T::players(&game_state).into_iter());
             let player_mapping = match player_mapping {
                 Some(player_mapping) => {

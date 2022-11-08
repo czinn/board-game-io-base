@@ -11,30 +11,30 @@ pub enum Action {
     Decr,
 }
 
-pub struct MyGame {}
+#[derive(Serialize, Deserialize)]
+pub struct MyGame(i64);
 
 impl Game for MyGame {
-    type State = i64;
     type View = i64;
     type Action = Action;
     type Config = ();
 
-    fn create(() : &()) -> Result<Self::State> {
-        Ok(0)
+    fn new(() : &()) -> Result<Self> {
+        Ok(MyGame(0))
     }
 
-    fn players(state: &Self::State) -> Vec<PlayerId> {
+    fn players(&self) -> Vec<PlayerId> {
         vec![PlayerId("0".to_string())]
     }
 
-    fn view(state: &Self::State, player: Option<&PlayerId>) -> Self::View {
-        *state
+    fn view(&self, _player: Option<&PlayerId>) -> Self::View {
+        self.0
     }
 
-    fn do_action(state: &mut Self::State, player: &PlayerId, action: &Self::Action) -> Result<()> {
+    fn do_action(&mut self, _player: &PlayerId, action: &Self::Action) -> Result<()> {
         match *action {
-            Self::Action::Incr => *state += 1,
-            Self::Action::Decr => *state -= 1,
+            Self::Action::Incr => self.0 += 1,
+            Self::Action::Decr => self.0 -= 1,
         }
         Ok(())
     }
