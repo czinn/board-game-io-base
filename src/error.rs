@@ -16,8 +16,8 @@ pub enum Error {
     InvalidCreate,
     #[error("user is spectating")]
     UserNotInGame,
-    #[error("invalid action")]
-    InvalidAction,
+    #[error("invalid action: {0}")]
+    InvalidAction(String),
     #[error("unknown error")]
     Unknown,
 }

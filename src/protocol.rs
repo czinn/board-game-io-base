@@ -1,29 +1,65 @@
-use serde::{Deserialize, Serialize};
-use typescript_definitions::TypeScriptify;
+use std::collections::HashMap;
 
-use crate::reconnect_token::ReconnectToken;
-use crate::room_id::RoomId;
-use crate::user_id::UserId;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::ids::{PlayerId, ReconnectToken, RoomId, UserId};
+
+#[derive(Serialize, Deserialize)]
+pub struct UserInfo {
+    id: UserId,
+    username: String,
+    leader: bool,
+    connected: bool,
+    player_id: Option<PlayerId>,
+}
 
 // Message from the server to the client.
-#[derive(Serialize, Deserialize, TypeScriptify)]
+#[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServerMessage {
-    RegisterResponse {
-        token: ReconnectToken,
+    Error {
+        message: String,
+    },
+    JoinResponse {
         username: String,
+        room_id: RoomId,
+        token: ReconnectToken,
         user_id: UserId,
+    },
+    UserInfo {
+        users: Vec<UserInfo>,
+    },
+    RoomInfo {
+        config: Value,
+    },
+    GameInfo {
+        view: Value,
+    },
+    InvalidAction {
+        message: String,
     },
 }
 
 // Message from the client to the server.
-#[derive(Serialize, Deserialize, TypeScriptify)]
+#[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
-    Register {
-        name: String,
+    JoinRoom {
+        username: String,
+        // None to create a new room.
+        room: Option<RoomId>,
     },
-    Reconnect {
+    ReconnectRoom {
         token: ReconnectToken,
+    },
+    UpdateConfig {
+        config: Value,
+    },
+    StartGame {
+        player_mapping: Option<HashMap<UserId, Value>>,
+    },
+    DoAction {
+        action: Value,
     },
 }

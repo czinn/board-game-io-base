@@ -4,8 +4,7 @@ use std::collections::HashSet;
 use crate::error::Error;
 use crate::game::Game;
 use crate::result::Result;
-use crate::room_id::RoomId;
-use crate::user_id::UserId;
+use crate::ids::{PlayerId, RoomId, UserId};
 
 pub enum RoomState<T: Game> {
     Lobby {
@@ -13,7 +12,7 @@ pub enum RoomState<T: Game> {
     },
     Game {
         game_state: T::State,
-        player_mapping: HashMap<UserId, T::Player>,
+        player_mapping: HashMap<UserId, PlayerId>,
     },
 }
 
@@ -74,7 +73,7 @@ impl<T: Game> Room<T> {
         }
     }
 
-    pub fn start_game(&mut self, user: &UserId, player_mapping: Option<HashMap<UserId, T::Player>>) -> Result<()> {
+    pub fn start_game(&mut self, user: &UserId, player_mapping: Option<HashMap<UserId, PlayerId>>) -> Result<()> {
         self.ensure_leader(user)?;
         if let RoomState::Lobby { config, .. } = &self.state {
             match player_mapping {
@@ -88,7 +87,7 @@ impl<T: Game> Room<T> {
                 None => (),
             }
             let game_state = T::create(&config)?;
-            let players = HashSet::<T::Player>::from_iter(T::players(&game_state).into_iter());
+            let players = HashSet::<PlayerId>::from_iter(T::players(&game_state).into_iter());
             let player_mapping = match player_mapping {
                 Some(player_mapping) => {
                     if !player_mapping
