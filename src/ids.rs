@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Eq, PartialEq, Hash, Clone, Serialize, Deserialize)]
-pub struct PlayerId(String);
+pub struct PlayerId(pub String);
 
 #[derive(Eq, PartialEq, Hash, Clone, Serialize, Deserialize)]
 pub struct ReconnectToken(String);
