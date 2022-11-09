@@ -4,6 +4,7 @@ pub mod ids;
 pub mod protocol;
 pub mod result;
 pub mod room;
+pub mod room_manager;
 pub mod server;
 
 #[cfg(test)]

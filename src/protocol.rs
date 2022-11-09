@@ -22,10 +22,10 @@ pub enum ServerMessage {
         message: String,
     },
     JoinResponse {
-        username: String,
         room_id: RoomId,
         token: ReconnectToken,
         user_id: UserId,
+        username: String,
     },
     UserInfo {
         users: Vec<UserInfo>,
@@ -50,7 +50,7 @@ pub enum ClientMessage {
         // None to create a new room.
         room: Option<RoomId>,
     },
-    ReconnectRoom {
+    RejoinRoom {
         token: ReconnectToken,
     },
     UpdateConfig {

@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use board_game_io_base::game::Game;
-use board_game_io_base::result::Result;
 use board_game_io_base::ids::PlayerId;
+use board_game_io_base::result::Result;
 use board_game_io_base::server::Server;
 
 #[derive(Serialize, Deserialize)]
@@ -19,7 +19,7 @@ impl Game for MyGame {
     type Action = Action;
     type Config = ();
 
-    fn new(() : &()) -> Result<Self> {
+    fn new((): ()) -> Result<Self> {
         Ok(MyGame(0))
     }
 

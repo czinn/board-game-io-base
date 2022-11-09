@@ -2,6 +2,10 @@
 pub enum Error {
     #[error("lobby is empty")]
     EmptyLobby,
+    #[error("username is in use")]
+    UsernameInUse,
+    #[error("invalid reconnect token")]
+    InvalidReconnectToken,
     #[error("user must be leader to perform operation")]
     UserNotLeader,
     #[error("game is already started")]
@@ -18,6 +22,8 @@ pub enum Error {
     UserNotInGame,
     #[error("invalid action: {0}")]
     InvalidAction(String),
+    #[error("encountered tokio error: {0}")]
+    TokioError(String),
     #[error("unknown error")]
     Unknown,
 }

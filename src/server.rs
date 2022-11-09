@@ -1,11 +1,11 @@
 use std::marker::{PhantomData, Send, Sync};
 use std::net::SocketAddr;
 
-use tokio::runtime::Handle;
-use tokio::net::{TcpListener, TcpStream};
-use tokio_tungstenite::{accept_async, tungstenite::Error};
-use tokio_tungstenite::tungstenite::Result;
 use futures_util::{SinkExt, StreamExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::runtime::Handle;
+use tokio_tungstenite::tungstenite::Result;
+use tokio_tungstenite::{accept_async, tungstenite::Error};
 
 use crate::game::Game;
 
@@ -43,7 +43,9 @@ impl<T: Game + Send + Sync + 'static> Server<T> {
         let listener = TcpListener::bind(addr).await.expect("Can't listen");
 
         while let Ok((stream, _)) = listener.accept().await {
-            let peer = stream.peer_addr().expect("connected streams should have a peer address");
+            let peer = stream
+                .peer_addr()
+                .expect("connected streams should have a peer address");
             println!("Peer address: {}", peer);
 
             handle.spawn(Self::accept_connection(peer, stream));
