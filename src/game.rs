@@ -6,7 +6,7 @@ use crate::result::Result;
 pub trait Game: Serialize + DeserializeOwned {
     type View: Serialize + DeserializeOwned;
     type Action: Serialize + DeserializeOwned;
-    type Config: Default + Clone + Send + Sync;
+    type Config: Default + Clone + Send + Sync + Serialize + DeserializeOwned;
 
     fn new(_: Self::Config) -> Result<Self>;
     fn players(&self) -> Vec<PlayerId>;

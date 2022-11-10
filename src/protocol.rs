@@ -3,15 +3,33 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::ids::{PlayerId, ReconnectToken, RoomId, UserId};
+use crate::ids::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct UserInfo {
     id: UserId,
     username: String,
     leader: bool,
     connected: bool,
     player_id: Option<PlayerId>,
+}
+
+impl UserInfo {
+    pub fn new(
+        id: UserId,
+        username: String,
+        leader: bool,
+        connected: bool,
+        player_id: Option<PlayerId>,
+    ) -> Self {
+        Self {
+            id,
+            username,
+            leader,
+            connected,
+            player_id,
+        }
+    }
 }
 
 // Message from the server to the client.
@@ -57,7 +75,7 @@ pub enum ClientMessage {
         config: Value,
     },
     StartGame {
-        player_mapping: Option<HashMap<UserId, Value>>,
+        player_mapping: Option<HashMap<UserId, PlayerId>>,
     },
     DoAction {
         action: Value,

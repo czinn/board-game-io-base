@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use serde_json::Value;
+
 use crate::error::Error;
 use crate::game::Game;
 use crate::ids::{PlayerId, ReconnectToken, UserId};
+use crate::protocol::UserInfo;
 use crate::result::Result;
 
 #[derive(Debug)]
@@ -201,6 +204,40 @@ impl<T: Game> Room<T> {
             }
         } else {
             Err(Error::GameNotStarted)
+        }
+    }
+
+    pub fn user_info(&self) -> Vec<UserInfo> {
+        let Self {
+            users,
+            user_data,
+            state,
+        } = &self;
+        let player_mapping = match state {
+            RoomState::Lobby { .. } => None,
+            RoomState::Game { player_mapping, .. } => Some(player_mapping),
+        };
+        user_data
+            .iter()
+            .map(|(id, user_data)| {
+                UserInfo::new(
+                    id.clone(),
+                    user_data.username.clone(),
+                    *id == users[0],
+                    users.contains(&id),
+                    match player_mapping {
+                        Some(player_mapping) => player_mapping.get(&id).cloned(),
+                        None => None,
+                    },
+                )
+            })
+            .collect()
+    }
+
+    pub fn lobby_info(&self) -> Option<Value> {
+        match &self.state {
+            RoomState::Lobby { config } => Some(serde_json::to_value(config).unwrap()),
+            RoomState::Game { .. } => None,
         }
     }
 }
