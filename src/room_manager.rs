@@ -56,13 +56,15 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
         room_tx: watch::Sender<Option<Value>>,
         users_tx: watch::Sender<Vec<UserInfo>>,
     ) -> Self {
-        Self {
+        let s = Self {
             room: Room::<T>::new(),
             message_rx,
             room_tx,
             users_tx,
             view_watches: HashMap::new(),
-        }
+        };
+        s.update_room();
+        s
     }
 
     fn update_users(&self) {
@@ -155,14 +157,14 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
 }
 
 #[derive(Clone)]
-pub struct RoomManagerHandle<T: Game + Send + Sync + 'static> {
+pub struct RoomManagerHandle<T: Game> {
     tx: mpsc::Sender<RoomManagerMessage>,
     room_watch: watch::Receiver<Option<Value>>,
     users_watch: watch::Receiver<Vec<UserInfo>>,
     game_type: PhantomData<T>,
 }
 
-impl<T: Game + Send + Sync + 'static> RoomManagerHandle<T> {
+impl<T: Game> RoomManagerHandle<T> {
     pub fn new() -> Self {
         let (tx, message_rx) = mpsc::channel(32);
         let (room_tx, room_watch) = watch::channel(None);
@@ -200,6 +202,26 @@ impl<T: Game + Send + Sync + 'static> RoomManagerHandle<T> {
 
     pub async fn rejoin_room(&self, token: ReconnectToken) -> Result<Subscription> {
         self.join_room_aux(JoinInfo::ReconnectToken(token)).await
+    }
+
+    async fn send_message(&self, message: RoomManagerMessage) -> Result<()> {
+        let result = self.tx.send(message).await;
+        match result {
+            Ok(()) => Ok(()),
+            Err(err) => Err(Error::TokioError(format!("{:?}", err))),
+        }
+    }
+
+    pub async fn update_config(&self, user_id: UserId, config: Value) -> Result<()> {
+        self.send_message(RoomManagerMessage::UpdateConfig { user_id, config }).await
+    }
+
+    pub async fn start_game(&self, user_id: UserId, player_mapping: Option<HashMap<UserId, PlayerId>>) -> Result<()> {
+        self.send_message(RoomManagerMessage::StartGame { user_id, player_mapping }).await
+    }
+
+    pub async fn do_action(&self, user_id: UserId, action: Value) -> Result<()> {
+        self.send_message(RoomManagerMessage::DoAction { user_id, action }).await
     }
 
     pub fn watch_room(&self) -> watch::Receiver<Option<Value>> {

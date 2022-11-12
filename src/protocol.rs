@@ -5,7 +5,7 @@ use serde_json::Value;
 
 use crate::ids::*;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserInfo {
     id: UserId,
     username: String,
@@ -70,6 +70,7 @@ pub enum ClientMessage {
     },
     RejoinRoom {
         token: ReconnectToken,
+        room: RoomId,
     },
     UpdateConfig {
         config: Value,

@@ -1,3 +1,4 @@
+pub mod client_handler;
 pub mod error;
 pub mod game;
 pub mod ids;

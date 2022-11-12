@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::ids::PlayerId;
 use crate::result::Result;
 
-pub trait Game: Serialize + DeserializeOwned {
+pub trait Game: Serialize + Send + Sync + Sized + Clone + 'static {
     type View: Serialize + DeserializeOwned;
     type Action: Serialize + DeserializeOwned;
     type Config: Default + Clone + Send + Sync + Serialize + DeserializeOwned;

@@ -11,16 +11,16 @@ pub enum Action {
     Decr,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MyGame(i64);
 
 impl Game for MyGame {
     type View = i64;
     type Action = Action;
-    type Config = ();
+    type Config = i64;
 
-    fn new((): ()) -> Result<Self> {
-        Ok(MyGame(0))
+    fn new(config: Self::Config) -> Result<Self> {
+        Ok(MyGame(config))
     }
 
     fn players(&self) -> Vec<PlayerId> {
