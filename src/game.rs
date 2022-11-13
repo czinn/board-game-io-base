@@ -10,6 +10,6 @@ pub trait Game: Serialize + Send + Sync + Sized + Clone + 'static {
 
     fn new(_: Self::Config) -> Result<Self>;
     fn players(&self) -> Vec<PlayerId>;
-    fn view(&self, _: Option<&PlayerId>) -> Self::View;
+    fn view<'a>(&'a self, _: Option<&PlayerId>) -> &'a Self::View;
     fn do_action(&mut self, _: &PlayerId, _: &Self::Action) -> Result<()>;
 }

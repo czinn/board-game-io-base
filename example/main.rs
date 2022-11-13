@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use board_game_io_base::error::Error;
 use board_game_io_base::game::Game;
 use board_game_io_base::ids::PlayerId;
 use board_game_io_base::result::Result;
@@ -12,31 +13,42 @@ pub enum Action {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MyGame(i64);
+pub struct MyGame {
+    count: i64,
+    players: Vec<PlayerId>,
+}
 
 impl Game for MyGame {
     type View = i64;
     type Action = Action;
-    type Config = i64;
+    type Config = usize;
 
     fn new(config: Self::Config) -> Result<Self> {
-        Ok(MyGame(config))
+        Ok(MyGame {
+            count: 0,
+            players: (0..config).map(|x| PlayerId(x.to_string())).collect(),
+        })
     }
 
     fn players(&self) -> Vec<PlayerId> {
-        vec![PlayerId("0".to_string())]
+        self.players.clone()
     }
 
-    fn view(&self, _player: Option<&PlayerId>) -> Self::View {
-        self.0
+    fn view(&self, _player: Option<&PlayerId>) -> &Self::View {
+        &self.count
     }
 
     fn do_action(&mut self, _player: &PlayerId, action: &Self::Action) -> Result<()> {
-        match *action {
-            Self::Action::Incr => self.0 += 1,
-            Self::Action::Decr => self.0 -= 1,
+        let new_count = match *action {
+            Self::Action::Incr => self.count + 1,
+            Self::Action::Decr => self.count - 1,
+        };
+        if new_count.abs() > 10 {
+            Err(Error::InvalidAction("count too high or low".to_string()))
+        } else {
+            self.count = new_count;
+            Ok(())
         }
-        Ok(())
     }
 }
 

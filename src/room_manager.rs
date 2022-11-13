@@ -31,14 +31,17 @@ pub enum RoomManagerMessage {
     UpdateConfig {
         user_id: UserId,
         config: Value,
+        resp: Responder<()>,
     },
     StartGame {
         user_id: UserId,
         player_mapping: Option<HashMap<UserId, PlayerId>>,
+        resp: Responder<()>,
     },
     DoAction {
         user_id: UserId,
         action: Value,
+        resp: Responder<()>,
     },
 }
 
@@ -78,7 +81,9 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
     }
 
     fn update_game(&self) {
-        let Self { room, view_watches, .. } = &self;
+        let Self {
+            room, view_watches, ..
+        } = &self;
         for (user_id, (tx, _rx)) in view_watches.iter() {
             let new_view = match room.user_view(user_id) {
                 Ok(view) => Some(serde_json::to_value(view).unwrap()),
@@ -112,46 +117,65 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                             }))
                         }
                     };
-                },
-                RoomManagerMessage::UpdateConfig { user_id, config } => {
-                    match serde_json::from_value(config) {
+                }
+                RoomManagerMessage::UpdateConfig {
+                    user_id,
+                    config,
+                    resp,
+                } => {
+                    let result = match serde_json::from_value(config) {
                         Ok(config) => {
-                            match self.room.update_config(&user_id, config) {
-                                Ok(()) => room_dirty = true,
-                                Err(_) => (),
+                            let result = self.room.update_config(&user_id, config);
+                            if result.is_ok() {
+                                room_dirty = true;
                             }
-                        },
-                        Err(_) => ()
+                            result
+                        }
+                        Err(_) => Err(Error::ParseFailure),
+                    };
+                    let _ = resp.send(result);
+                }
+                RoomManagerMessage::StartGame {
+                    user_id,
+                    player_mapping,
+                    resp,
+                } => {
+                    let result = self.room.start_game(&user_id, player_mapping);
+                    if result.is_ok() {
+                        users_dirty = true;
+                        room_dirty = true;
+                        game_dirty = true;
                     }
-                },
-                RoomManagerMessage::StartGame { user_id, player_mapping } => {
-                    match self.room.start_game(&user_id, player_mapping) {
-                        Ok(()) => {
-                            users_dirty = true;
-                            room_dirty = true;
-                            game_dirty = true;
-                        },
-                        Err(_) => (),
-                    }
-                },
-                RoomManagerMessage::DoAction { user_id, action } => {
-                    match serde_json::from_value(action) {
+                    let _ = resp.send(result);
+                }
+                RoomManagerMessage::DoAction {
+                    user_id,
+                    action,
+                    resp,
+                } => {
+                    let result = match serde_json::from_value(action) {
                         Ok(action) => {
-                            match self.room.user_action(&user_id, &action) {
-                                Ok(()) => {
-                                    game_dirty = true;
-                                },
-                                Err(_) => (),
+                            let result = self.room.user_action(&user_id, &action);
+                            if result.is_ok() {
+                                game_dirty = true;
                             }
-                        },
-                        Err(_) => (),
-                    }
-                },
+                            result
+                        }
+                        Err(_) => Err(Error::ParseFailure),
+                    };
+                    let _ = resp.send(result);
+                }
             }
 
-            if users_dirty { self.update_users() }
-            if room_dirty { self.update_room() }
-            if game_dirty { self.update_game() }
+            if users_dirty {
+                self.update_users()
+            }
+            if room_dirty {
+                self.update_room()
+            }
+            if game_dirty {
+                self.update_game()
+            }
         }
     }
 }
@@ -181,47 +205,67 @@ impl<T: Game> RoomManagerHandle<T> {
         }
     }
 
-    async fn join_room_aux(&self, join_info: JoinInfo) -> Result<Subscription> {
+    async fn send_message<R, F>(&self, message: F) -> Result<R>
+    where
+        F: FnOnce(Responder<R>) -> RoomManagerMessage,
+    {
         let (tx, rx) = oneshot::channel();
-        self.tx
-            .send(RoomManagerMessage::JoinRoom {
-                join_info,
-                resp: tx,
-            })
-            .await
-            .unwrap();
+        let result = self.tx.send(message(tx)).await;
+        match result {
+            Ok(()) => (),
+            Err(err) => return Err(Error::TokioError(err.to_string())),
+        };
         match rx.await {
             Ok(res) => res,
-            Err(err) => Err(Error::TokioError(format!("{:?}", err))),
+            Err(err) => Err(Error::TokioError(err.to_string())),
         }
     }
 
     pub async fn join_room(&self, username: String) -> Result<Subscription> {
-        self.join_room_aux(JoinInfo::Username(username)).await
+        self.send_message(|resp| RoomManagerMessage::JoinRoom {
+            join_info: JoinInfo::Username(username),
+            resp,
+        })
+        .await
     }
 
     pub async fn rejoin_room(&self, token: ReconnectToken) -> Result<Subscription> {
-        self.join_room_aux(JoinInfo::ReconnectToken(token)).await
-    }
-
-    async fn send_message(&self, message: RoomManagerMessage) -> Result<()> {
-        let result = self.tx.send(message).await;
-        match result {
-            Ok(()) => Ok(()),
-            Err(err) => Err(Error::TokioError(format!("{:?}", err))),
-        }
+        self.send_message(|resp| RoomManagerMessage::JoinRoom {
+            join_info: JoinInfo::ReconnectToken(token),
+            resp,
+        })
+        .await
     }
 
     pub async fn update_config(&self, user_id: UserId, config: Value) -> Result<()> {
-        self.send_message(RoomManagerMessage::UpdateConfig { user_id, config }).await
+        self.send_message(|resp| RoomManagerMessage::UpdateConfig {
+            user_id,
+            config,
+            resp,
+        })
+        .await
     }
 
-    pub async fn start_game(&self, user_id: UserId, player_mapping: Option<HashMap<UserId, PlayerId>>) -> Result<()> {
-        self.send_message(RoomManagerMessage::StartGame { user_id, player_mapping }).await
+    pub async fn start_game(
+        &self,
+        user_id: UserId,
+        player_mapping: Option<HashMap<UserId, PlayerId>>,
+    ) -> Result<()> {
+        self.send_message(|resp| RoomManagerMessage::StartGame {
+            user_id,
+            player_mapping,
+            resp,
+        })
+        .await
     }
 
     pub async fn do_action(&self, user_id: UserId, action: Value) -> Result<()> {
-        self.send_message(RoomManagerMessage::DoAction { user_id, action }).await
+        self.send_message(|resp| RoomManagerMessage::DoAction {
+            user_id,
+            action,
+            resp,
+        })
+        .await
     }
 
     pub fn watch_room(&self) -> watch::Receiver<Option<Value>> {

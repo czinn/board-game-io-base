@@ -1,5 +1,7 @@
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("could not parse value")]
+    ParseFailure,
     #[error("lobby is empty")]
     EmptyLobby,
     #[error("username is in use")]

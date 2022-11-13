@@ -180,7 +180,7 @@ impl<T: Game> Room<T> {
         }
     }
 
-    pub fn user_view(&self, user: &UserId) -> Result<T::View> {
+    pub fn user_view<'a>(&'a self, user: &UserId) -> Result<&'a T::View> {
         if let RoomState::Game {
             game_state,
             player_mapping,

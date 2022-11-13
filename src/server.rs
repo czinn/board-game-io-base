@@ -1,22 +1,22 @@
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Handle;
 use tokio_tungstenite::tungstenite::Result;
 use tokio_tungstenite::{accept_async, tungstenite::Error};
 
+use crate::client_handler::ClientHandler;
 use crate::game::Game;
 use crate::ids::*;
 use crate::room_manager::RoomManagerHandle;
-use crate::client_handler::ClientHandler;
 
 type Rooms<T> = Arc<Mutex<HashMap<RoomId, RoomManagerHandle<T>>>>;
 
 pub struct Server<T: Game> {
-    game_type: PhantomData<T>
+    game_type: PhantomData<T>,
 }
 
 impl<T: Game> Server<T> {
@@ -41,7 +41,8 @@ impl<T: Game> Server<T> {
     pub async fn run(addr: String) {
         let handle = Handle::current();
         let listener = TcpListener::bind(addr).await.expect("Can't listen");
-        let rooms: Arc<Mutex<HashMap<RoomId, RoomManagerHandle<T>>>> = Arc::new(Mutex::new(HashMap::new()));
+        let rooms: Arc<Mutex<HashMap<RoomId, RoomManagerHandle<T>>>> =
+            Arc::new(Mutex::new(HashMap::new()));
 
         while let Ok((stream, _)) = listener.accept().await {
             let peer = stream
