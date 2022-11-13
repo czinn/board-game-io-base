@@ -3,17 +3,22 @@ use rand::{
     Rng,
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct PlayerId(pub String);
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ReconnectToken(String);
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct RoomId(String);
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct UserId(String);
 
 impl UserId {

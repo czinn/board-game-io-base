@@ -2,10 +2,12 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use ts_rs::TS;
 
 use crate::ids::*;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug)]
+#[ts(export)]
 pub struct UserInfo {
     id: UserId,
     username: String,
@@ -33,8 +35,9 @@ impl UserInfo {
 }
 
 // Message from the server to the client.
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "type")]
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMessage {
     Error {
         message: String,
@@ -49,9 +52,11 @@ pub enum ServerMessage {
         users: Vec<UserInfo>,
     },
     RoomInfo {
+        #[ts(type = "any")]
         config: Value,
     },
     GameInfo {
+        #[ts(type = "any")]
         view: Value,
     },
     InvalidAction {
@@ -60,8 +65,9 @@ pub enum ServerMessage {
 }
 
 // Message from the client to the server.
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "type")]
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
     JoinRoom {
         username: String,
@@ -73,12 +79,14 @@ pub enum ClientMessage {
         room: RoomId,
     },
     UpdateConfig {
+        #[ts(type = "any")]
         config: Value,
     },
     StartGame {
         player_mapping: Option<HashMap<UserId, PlayerId>>,
     },
     DoAction {
+        #[ts(type = "any")]
         action: Value,
     },
 }
