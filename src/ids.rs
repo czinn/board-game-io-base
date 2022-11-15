@@ -5,9 +5,9 @@ use rand::{
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub struct PlayerId(pub String);
+pub struct PlayerId(pub u32);
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -17,21 +17,9 @@ pub struct ReconnectToken(String);
 #[ts(export)]
 pub struct RoomId(String);
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub struct UserId(String);
-
-impl UserId {
-    pub fn new() -> Self {
-        Self(
-            rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(4)
-                .map(char::from)
-                .collect(),
-        )
-    }
-}
+pub struct UserId(pub u32);
 
 impl ReconnectToken {
     pub fn new() -> Self {

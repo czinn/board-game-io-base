@@ -37,6 +37,7 @@ pub struct Room<T: Game> {
     // Map may contain users that are not currently connected, but might reconnect later
     user_data: HashMap<UserId, UserData>,
     state: RoomState<T>,
+    next_user_id: UserId,
 }
 
 impl<T: Game> Room<T> {
@@ -47,6 +48,7 @@ impl<T: Game> Room<T> {
             state: RoomState::Lobby {
                 config: T::Config::default(),
             },
+            next_user_id: UserId(0),
         }
     }
 
@@ -62,14 +64,15 @@ impl<T: Game> Room<T> {
                     return Err(Error::UsernameInUse);
                 }
                 loop {
-                    let user_id = UserId::new();
+                    let user_id = self.next_user_id;
+                    self.next_user_id = UserId(self.next_user_id.0 + 1);
                     if self.user_data.contains_key(&user_id) {
                         continue;
                     }
                     self.user_data.insert(
-                        user_id.clone(),
+                        user_id,
                         UserData {
-                            id: user_id.clone(),
+                            id: user_id,
                             username,
                             token: ReconnectToken::new(),
                         },
@@ -136,40 +139,15 @@ impl<T: Game> Room<T> {
     pub fn start_game(
         &mut self,
         user: &UserId,
-        player_mapping: Option<HashMap<UserId, PlayerId>>,
     ) -> Result<()> {
         self.ensure_leader(user)?;
         if let RoomState::Lobby { config, .. } = &self.state {
-            match player_mapping {
-                Some(ref player_mapping) => {
-                    // Verify that all users in the mapping are in the lobby.
-                    let users = HashSet::<UserId>::from_iter(self.users.clone().into_iter());
-                    if !player_mapping.keys().all(|user_id| users.contains(user_id)) {
-                        return Err(Error::InvalidPlayerMapping);
-                    }
-                }
-                None => (),
-            }
-            let game_state = T::new(config.clone())?;
+            let game_state = T::new(config.clone(), self.users.len() as u32)?;
             let players = HashSet::<PlayerId>::from_iter(T::players(&game_state).into_iter());
-            let player_mapping = match player_mapping {
-                Some(player_mapping) => {
-                    if !player_mapping
-                        .values()
-                        .all(|player| players.contains(player))
-                    {
-                        return Err(Error::InvalidPlayerMapping);
-                    }
-                    player_mapping
-                }
-                None => {
-                    if players.len() != self.users.len() {
-                        return Err(Error::WrongPlayerCount);
-                    }
-                    // TODO: Shuffle one of the lists
-                    HashMap::from_iter(self.users.clone().into_iter().zip(players.into_iter()))
-                }
-            };
+            if players.len() != self.users.len() {
+                return Err(Error::WrongPlayerCount);
+            }
+            let player_mapping = HashMap::from_iter(self.users.clone().into_iter().zip(players.into_iter()));
             self.state = RoomState::Game {
                 game_state,
                 player_mapping,
@@ -212,6 +190,7 @@ impl<T: Game> Room<T> {
             users,
             user_data,
             state,
+            next_user_id: _,
         } = &self;
         let player_mapping = match state {
             RoomState::Lobby { .. } => None,

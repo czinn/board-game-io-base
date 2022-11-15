@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
@@ -82,9 +80,7 @@ pub enum ClientMessage {
         #[ts(type = "any")]
         config: Value,
     },
-    StartGame {
-        player_mapping: Option<HashMap<UserId, PlayerId>>,
-    },
+    StartGame,
     DoAction {
         #[ts(type = "any")]
         action: Value,

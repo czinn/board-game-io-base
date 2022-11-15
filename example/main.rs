@@ -14,19 +14,21 @@ pub enum Action {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MyGame {
-    count: i64,
+    count: i32,
+    max_value: u32,
     players: Vec<PlayerId>,
 }
 
 impl Game for MyGame {
-    type View = i64;
+    type View = i32;
     type Action = Action;
-    type Config = usize;
+    type Config = u32;
 
-    fn new(config: Self::Config) -> Result<Self> {
+    fn new(config: Self::Config, num_players: u32) -> Result<Self> {
         Ok(MyGame {
             count: 0,
-            players: (0..config).map(|x| PlayerId(x.to_string())).collect(),
+            max_value: config,
+            players: (0..num_players).map(|x| PlayerId(x)).collect(),
         })
     }
 
@@ -43,7 +45,7 @@ impl Game for MyGame {
             Self::Action::Incr => self.count + 1,
             Self::Action::Decr => self.count - 1,
         };
-        if new_count.abs() > 10 {
+        if new_count.abs() as u32 > self.max_value {
             Err(Error::InvalidAction("count too high or low".to_string()))
         } else {
             self.count = new_count;

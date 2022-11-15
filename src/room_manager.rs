@@ -35,7 +35,6 @@ pub enum RoomManagerMessage {
     },
     StartGame {
         user_id: UserId,
-        player_mapping: Option<HashMap<UserId, PlayerId>>,
         resp: Responder<()>,
     },
     DoAction {
@@ -137,10 +136,9 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                 }
                 RoomManagerMessage::StartGame {
                     user_id,
-                    player_mapping,
                     resp,
                 } => {
-                    let result = self.room.start_game(&user_id, player_mapping);
+                    let result = self.room.start_game(&user_id);
                     if result.is_ok() {
                         users_dirty = true;
                         room_dirty = true;
@@ -249,11 +247,9 @@ impl<T: Game> RoomManagerHandle<T> {
     pub async fn start_game(
         &self,
         user_id: UserId,
-        player_mapping: Option<HashMap<UserId, PlayerId>>,
     ) -> Result<()> {
         self.send_message(|resp| RoomManagerMessage::StartGame {
             user_id,
-            player_mapping,
             resp,
         })
         .await

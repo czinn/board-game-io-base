@@ -144,10 +144,10 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     }
                 }
             }
-            ClientMessage::StartGame { player_mapping } => {
+            ClientMessage::StartGame => {
                 match self
                     .room_manager
-                    .start_game(self.subscription.user_id.clone(), player_mapping)
+                    .start_game(self.subscription.user_id.clone())
                     .await
                 {
                     Ok(()) => (),
