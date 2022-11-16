@@ -37,14 +37,13 @@ function compute_users_map(users) {
 export let addr: string;
 
 // Export properties
+export let connecting: boolean = true;
 export let room_id: RoomId = get_url_room();
 export let user_id: UserId = null;
 export let username: string = null;
 export let users: UserInfo[] = [];
 export let config: any = null;
 export let view: any = null;
-export let users_map: Record<UserId, UserInfo> = compute_users_map(users);
-export let user: UserInfo = user_id == null ? null : users_map[user_id] || null;
 
 // Private properties
 let ws: WebSocket;
@@ -60,7 +59,11 @@ onMount(() => {
     // Check if the URL has a room code in it
     let url_room = get_url_room();
     if (url_room) {
-      rejoin_room(url_room);
+      if (!rejoin_room(url_room)) {
+        connecting = false;
+      }
+    } else {
+      connecting = false;
     }
   };
 });
@@ -78,13 +81,15 @@ function handle_config_update(new_config: any) {
 function handle_server_message(event: MessageEvent) {
   let data: ServerMessage = JSON.parse(event.data);
   if (data.type === "error") {
+    connecting = false;
     console.log("Error: " + data.message);
   } else if (data.type === "join_response") {
+    connecting = false;
+    user_id = data.user_id;
+    username = data.username;
     room_id = data.room_id;
     window.history.pushState("", "", "/" + data.room_id);
     set_token(data.room_id, data.token);
-    user_id = data.user_id;
-    username = data.username;
   } else if (data.type === "user_info") {
     users = data.users;
   } else if (data.type === "room_info") {
@@ -106,6 +111,8 @@ export function join_room(username: string) {
 }
 
 export function rejoin_room(room: RoomId): boolean {
+  window.history.pushState("", "", "/" + room);
+  room_id = room;
   let token: ReconnectToken | null = get_token(room);
   if (token === null) {
     return false;
@@ -125,5 +132,11 @@ export function start_game(player_mapping?: Record<UserId, PlayerId>) {
 export function do_action(action: any) {
   send_message({ type: "do_action", action });
 }
+
+// Derived properties
+export let users_map: Record<UserId, UserInfo> = compute_users_map(users);
+export let user: UserInfo | null = user_id === null ? null : users_map[user_id];
+$: console.log(users, users_map, user_id, user);
+
 
 </script>

@@ -2,4 +2,4 @@
 import type { PlayerId } from "./PlayerId";
 import type { UserId } from "./UserId";
 
-export interface UserInfo { id: UserId, username: string, leader: boolean, connected: boolean, player_id: PlayerId | null, }
+export interface UserInfo { id: UserId, username: string, leader: boolean, player_id: PlayerId | null, }

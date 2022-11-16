@@ -10,7 +10,6 @@ pub struct UserInfo {
     id: UserId,
     username: String,
     leader: bool,
-    connected: bool,
     player_id: Option<PlayerId>,
 }
 
@@ -19,14 +18,12 @@ impl UserInfo {
         id: UserId,
         username: String,
         leader: bool,
-        connected: bool,
         player_id: Option<PlayerId>,
     ) -> Self {
         Self {
             id,
             username,
             leader,
-            connected,
             player_id,
         }
     }

@@ -196,14 +196,14 @@ impl<T: Game> Room<T> {
             RoomState::Lobby { .. } => None,
             RoomState::Game { player_mapping, .. } => Some(player_mapping),
         };
-        user_data
+        users
             .iter()
-            .map(|(id, user_data)| {
+            .map(|id| {
+                let user_data = user_data.get(&id).unwrap();
                 UserInfo::new(
-                    id.clone(),
+                    *id,
                     user_data.username.clone(),
                     *id == users[0],
-                    users.contains(&id),
                     match player_mapping {
                         Some(player_mapping) => player_mapping.get(&id).cloned(),
                         None => None,
