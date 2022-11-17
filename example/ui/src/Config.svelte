@@ -6,7 +6,7 @@ const dispatch = createEventDispatcher();
 export let config;
 export let readonly;
 
-$: dispatch('config_change', { config: config });
+$: dispatch('config_change', config);
 </script>
 
 {#if readonly}

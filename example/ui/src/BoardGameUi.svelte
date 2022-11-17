@@ -10,13 +10,18 @@ let room_id;
 let connecting;
 let users = [];
 let config;
+let view;
 let user;
 
 let new_username;
 let rejoin_room_id;
 
 function config_handler(event) {
-  client.handle_config_update(event.detail.config);
+  client.handle_config_update(event.detail);
+}
+
+function do_action(event) {
+  client.do_action(event.detail);
 }
 </script>
 
@@ -30,6 +35,7 @@ function config_handler(event) {
     bind:connecting={connecting}
     bind:config={config}
     bind:user={user}
+    bind:view={view}
     addr="ws://localhost:9002" />
   <h1>{game_name}</h1>
   {#if connecting}
@@ -53,7 +59,7 @@ function config_handler(event) {
           <button type="submit">Join Room</button>
         </form>
       {/if}
-    {:else}
+    {:else if config !== null}
       <p>
         Players:
         {#each users as u, index}
@@ -62,13 +68,30 @@ function config_handler(event) {
         {/each}
       </p>
       <p>Room is {room_id}</p>
-      <slot name="config" config={config} readonly={!user || !user.leader} config_handler={e => config_handler(e)}></slot>
+      {#if user && user.leader}
+        <button on:click={() => client.start_game()}>
+          Start game
+        </button>
+      {/if}
+      <div id="config">
+        <slot name="config" config={config} readonly={!user || !user.leader} config_handler={e => config_handler(e)}></slot>
+      </div>
+    {:else if view !== null}
+      <div id="game">
+        <slot name="game" view={view} do_action={e => do_action(e)}></slot>
+      </div>
+    {:else}
+      <p>Something has gone wrong</p>
     {/if}
   {/if}
 
 </main>
 
 <style>
+#config {
+  margin: 2em;
+}
+
 span.user {
 }
 

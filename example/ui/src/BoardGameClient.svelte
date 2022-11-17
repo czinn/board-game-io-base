@@ -100,6 +100,10 @@ function handle_server_message(event: MessageEvent) {
     server_config = data.config;
     config = server_config;
   } else if (data.type === "game_info") {
+    if (data.view !== null) {
+      server_config = null;
+      config = null;
+    }
     view = data.view;
   } else if (data.type === "invalid_action") {
     console.log("Invalid action: " + data.message);
@@ -129,8 +133,8 @@ function update_config(config: any) {
   send_message({ type: "update_config", config });
 }
 
-export function start_game(player_mapping?: Record<UserId, PlayerId>) {
-  send_message({ type: "start_game", player_mapping: player_mapping || null });
+export function start_game() {
+  send_message({ type: "start_game" });
 }
 
 export function do_action(action: any) {

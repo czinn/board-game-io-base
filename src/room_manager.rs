@@ -168,11 +168,11 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
             if users_dirty {
                 self.update_users()
             }
-            if room_dirty {
-                self.update_room()
-            }
             if game_dirty {
                 self.update_game()
+            }
+            if room_dirty {
+                self.update_room()
             }
         }
     }
