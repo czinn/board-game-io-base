@@ -6,7 +6,8 @@ import Config from './Config.svelte'
 <BoardGameUi game_name="Example">
   <Config slot="config"
           let:config={config} config={config}
-          let:readonly={readonly} readonly={readonly} />
+          let:readonly={readonly} readonly={readonly}
+          let:config_handler={config_handler} on:config_change={config_handler} />
 </BoardGameUi>
 
 <style>

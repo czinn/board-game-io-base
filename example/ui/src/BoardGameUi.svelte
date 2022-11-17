@@ -14,6 +14,10 @@ let user;
 
 let new_username;
 let rejoin_room_id;
+
+function config_handler(event) {
+  client.handle_config_update(event.detail.config);
+}
 </script>
 
 <main>
@@ -58,8 +62,7 @@ let rejoin_room_id;
         {/each}
       </p>
       <p>Room is {room_id}</p>
-      <p>User is {JSON.stringify(user)}</p>
-      <slot name="config" config={config} readonly={true}></slot>
+      <slot name="config" config={config} readonly={!user || !user.leader} config_handler={e => config_handler(e)}></slot>
     {/if}
   {/if}
 

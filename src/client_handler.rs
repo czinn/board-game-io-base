@@ -129,7 +129,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
             ClientMessage::UpdateConfig { config } => {
                 match self
                     .room_manager
-                    .update_config(self.subscription.user_id.clone(), config)
+                    .update_config(self.subscription.user_id, config)
                     .await
                 {
                     Ok(()) => (),
@@ -147,7 +147,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
             ClientMessage::StartGame => {
                 match self
                     .room_manager
-                    .start_game(self.subscription.user_id.clone())
+                    .start_game(self.subscription.user_id)
                     .await
                 {
                     Ok(()) => (),
@@ -165,7 +165,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
             ClientMessage::DoAction { action } => {
                 match self
                     .room_manager
-                    .do_action(self.subscription.user_id.clone(), action)
+                    .do_action(self.subscription.user_id, action)
                     .await
                 {
                     Ok(()) => (),
@@ -202,7 +202,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
             &ServerMessage::JoinResponse {
                 room_id: self.room_id.clone(),
                 token: self.subscription.token.clone(),
-                user_id: self.subscription.user_id.clone(),
+                user_id: self.subscription.user_id,
                 username: self.subscription.username.clone(),
             },
         )

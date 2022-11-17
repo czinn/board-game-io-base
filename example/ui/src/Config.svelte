@@ -1,9 +1,13 @@
 <script>
+import { createEventDispatcher } from 'svelte';
+
+const dispatch = createEventDispatcher();
+
 export let config;
 export let readonly;
-</script>
 
-<p>Readonly: {readonly}</p>
+$: dispatch('config_change', { config: config });
+</script>
 
 {#if readonly}
   Config: {JSON.stringify(config)}

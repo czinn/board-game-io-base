@@ -49,7 +49,11 @@ export let view: any = null;
 let ws: WebSocket;
 let server_config: any = null;
 
-$: handle_config_update(config);
+// Derived properties
+export let users_map: Record<UserId, UserInfo>;
+$: users_map = compute_users_map(users);
+export let user: UserInfo | null;
+$: user = user_id === null ? null : users_map[user_id];
 
 onMount(() => {
   ws = new WebSocket(addr);
@@ -68,10 +72,10 @@ onMount(() => {
   };
 });
 
-function handle_config_update(new_config: any) {
+export function handle_config_update(new_config: any) {
   if (new_config !== server_config) {
     if (user !== null && user.leader) {
-      update_config(config);
+      update_config(new_config);
     } else {
       config = server_config;
     }
@@ -132,11 +136,5 @@ export function start_game(player_mapping?: Record<UserId, PlayerId>) {
 export function do_action(action: any) {
   send_message({ type: "do_action", action });
 }
-
-// Derived properties
-export let users_map: Record<UserId, UserInfo> = compute_users_map(users);
-export let user: UserInfo | null = user_id === null ? null : users_map[user_id];
-$: console.log(users, users_map, user_id, user);
-
 
 </script>
