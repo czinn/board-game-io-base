@@ -4,4 +4,4 @@ import type { RoomId } from "./RoomId";
 import type { UserId } from "./UserId";
 import type { UserInfo } from "./UserInfo";
 
-export type ServerMessage = { type: "error", message: string, } | { type: "join_response", room_id: RoomId, token: ReconnectToken, user_id: UserId, username: string, } | { type: "user_info", users: Array<UserInfo>, } | { type: "room_info", config: any, } | { type: "game_info", view: any, } | { type: "invalid_action", message: string, };
+export type ServerMessage = { type: "error", message: string, } | { type: "join_response", room_id: RoomId, token: ReconnectToken, user_id: UserId, username: string, } | { type: "user_info", users: Array<UserInfo>, } | { type: "room_info", config: any, } | { type: "game_info", view: any, } | { type: "game_view_diff", diff: any, } | { type: "invalid_action", message: string, };

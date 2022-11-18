@@ -19,8 +19,13 @@ pub struct MyGame {
     players: Vec<PlayerId>,
 }
 
+#[derive(Serialize, Clone)]
+pub struct View<'a> {
+    count: &'a i32,
+}
+
 impl Game for MyGame {
-    type View = i32;
+    type View<'a> = View<'a>;
     type Action = Action;
     type Config = u32;
 
@@ -36,8 +41,8 @@ impl Game for MyGame {
         self.players.clone()
     }
 
-    fn view(&self, _player: Option<&PlayerId>) -> &Self::View {
-        &self.count
+    fn view<'a>(&'a self, _player: Option<&PlayerId>) -> Self::View<'a> {
+        View { count: &self.count }
     }
 
     fn do_action(&mut self, _player: &PlayerId, action: &Self::Action) -> Result<()> {

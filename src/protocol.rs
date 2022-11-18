@@ -54,6 +54,10 @@ pub enum ServerMessage {
         #[ts(type = "any")]
         view: Value,
     },
+    GameViewDiff {
+        #[ts(type = "any")]
+        diff: Value,
+    },
     InvalidAction {
         message: String,
     },
@@ -82,4 +86,5 @@ pub enum ClientMessage {
         #[ts(type = "any")]
         action: Value,
     },
+    GameViewRequest,
 }

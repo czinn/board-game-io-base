@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use futures_util::{SinkExt, StreamExt};
+use serde_json::Value;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::tungstenite::{error::Error as TungsteniteError, Result};
@@ -18,6 +19,7 @@ pub struct ClientHandler<S: AsyncRead + AsyncWrite + Unpin, T: Game> {
     room_id: RoomId,
     room_manager: RoomManagerHandle<T>,
     subscription: Subscription,
+    last_view: Option<Value>,
 }
 
 async fn send<S: AsyncRead + AsyncWrite + Unpin>(
@@ -59,6 +61,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                                     room_id,
                                     room_manager,
                                     subscription,
+                                    last_view: None,
                                 });
                             }
                             Err(err) => {
@@ -85,6 +88,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                                         room_id: room,
                                         room_manager,
                                         subscription,
+                                        last_view: None,
                                     });
                                 }
                                 Err(err) => {
@@ -182,6 +186,12 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     }
                 }
             }
+            ClientMessage::GameViewRequest => {
+                match &self.last_view {
+                    Some(last_view) => send(&mut self.ws, &ServerMessage::GameInfo { view: last_view.clone() }).await?,
+                    None => (),
+                }
+            },
             _ => {
                 send(
                     &mut self.ws,
@@ -225,8 +235,23 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     if let Ok(()) = view_updated {
                         let view = (*self.subscription.game_view.borrow()).clone();
                         match view {
-                            Some(view) => send(&mut self.ws, &ServerMessage::GameInfo { view: view }).await?,
-                            None => (),
+                            Some(view) => {
+                                match &self.last_view {
+                                    None => {
+                                        self.last_view = Some(view.clone());
+                                        send(&mut self.ws, &ServerMessage::GameInfo { view: view }).await?;
+                                    },
+                                    Some(last_view) => {
+                                        // Send a diff instead
+                                        let diff = json_patch::diff(&last_view, &view);
+                                        if !diff.0.is_empty() {
+                                            send(&mut self.ws, &ServerMessage::GameViewDiff { diff: serde_json::to_value(diff).unwrap() }).await?;
+                                        }
+                                        self.last_view = Some(view);
+                                    },
+                                }
+                            },
+                            None => self.last_view = None,
                         }
                     }
                 },

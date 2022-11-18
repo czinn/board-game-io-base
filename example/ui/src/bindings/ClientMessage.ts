@@ -2,4 +2,4 @@
 import type { ReconnectToken } from "./ReconnectToken";
 import type { RoomId } from "./RoomId";
 
-export type ClientMessage = { type: "join_room", username: string, room: RoomId | null, } | { type: "rejoin_room", token: ReconnectToken, room: RoomId, } | { type: "update_config", config: any, } | { type: "start_game" } | { type: "do_action", action: any, };
+export type ClientMessage = { type: "join_room", username: string, room: RoomId | null, } | { type: "rejoin_room", token: ReconnectToken, room: RoomId, } | { type: "update_config", config: any, } | { type: "start_game" } | { type: "do_action", action: any, } | { type: "game_view_request" };
