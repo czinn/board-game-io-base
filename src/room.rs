@@ -162,7 +162,7 @@ impl<T: Game> Room<T> {
             player_mapping,
         } = &self.state
         {
-            Ok(T::view(&game_state, player_mapping.get(user)))
+            Ok(T::view(&game_state, player_mapping.get(user).copied()))
         } else {
             Err(Error::GameNotStarted)
         }
@@ -175,7 +175,7 @@ impl<T: Game> Room<T> {
         } = &mut self.state
         {
             match player_mapping.get(user) {
-                Some(player) => T::do_action(game_state, player, action),
+                Some(player) => T::do_action(game_state, *player, action),
                 None => Err(Error::UserNotInGame),
             }
         } else {

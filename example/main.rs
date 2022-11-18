@@ -41,11 +41,11 @@ impl Game for MyGame {
         self.players.clone()
     }
 
-    fn view<'a>(&'a self, _player: Option<&PlayerId>) -> Self::View<'a> {
+    fn view<'a>(&'a self, _player: Option<PlayerId>) -> Self::View<'a> {
         View { count: &self.count }
     }
 
-    fn do_action(&mut self, _player: &PlayerId, action: &Self::Action) -> Result<()> {
+    fn do_action(&mut self, _player: PlayerId, action: &Self::Action) -> Result<()> {
         let new_count = match *action {
             Self::Action::Incr => self.count + 1,
             Self::Action::Decr => self.count - 1,

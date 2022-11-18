@@ -5,7 +5,7 @@ use rand::{
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, PartialOrd, Ord, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct PlayerId(pub u32);
 
