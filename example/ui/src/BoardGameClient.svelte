@@ -101,24 +101,20 @@ function handle_server_message(event: MessageEvent) {
     server_config = data.config;
     config = server_config;
   } else if (data.type === "game_info") {
-    console.log("got full view:", data.view);
     if (data.view !== null) {
       server_config = null;
       config = null;
     }
     view = data.view;
   } else if (data.type === "game_view_diff") {
-    console.log("got diff:", data.diff);
     if (data.view !== null) {
       try {
         applyPatch(view, data.diff, true);
         view = view;
       } catch (err) {
-        console.log("error applying diff", err);
         send_message({ type: "game_view_request" });
       }
     } else {
-      console.log("no view to apply diff to");
       send_message({ type: "game_view_request" });
     }
   } else if (data.type === "invalid_action") {

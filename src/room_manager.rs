@@ -134,10 +134,7 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                     };
                     let _ = resp.send(result);
                 }
-                RoomManagerMessage::StartGame {
-                    user_id,
-                    resp,
-                } => {
+                RoomManagerMessage::StartGame { user_id, resp } => {
                     let result = self.room.start_game(&user_id);
                     if result.is_ok() {
                         users_dirty = true;
@@ -244,15 +241,9 @@ impl<T: Game> RoomManagerHandle<T> {
         .await
     }
 
-    pub async fn start_game(
-        &self,
-        user_id: UserId,
-    ) -> Result<()> {
-        self.send_message(|resp| RoomManagerMessage::StartGame {
-            user_id,
-            resp,
-        })
-        .await
+    pub async fn start_game(&self, user_id: UserId) -> Result<()> {
+        self.send_message(|resp| RoomManagerMessage::StartGame { user_id, resp })
+            .await
     }
 
     pub async fn do_action(&self, user_id: UserId, action: Value) -> Result<()> {

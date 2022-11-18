@@ -14,12 +14,7 @@ pub struct UserInfo {
 }
 
 impl UserInfo {
-    pub fn new(
-        id: UserId,
-        username: String,
-        leader: bool,
-        player_id: Option<PlayerId>,
-    ) -> Self {
+    pub fn new(id: UserId, username: String, leader: bool, player_id: Option<PlayerId>) -> Self {
         Self {
             id,
             username,

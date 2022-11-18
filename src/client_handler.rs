@@ -186,11 +186,17 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     }
                 }
             }
-            ClientMessage::GameViewRequest => {
-                match &self.last_view {
-                    Some(last_view) => send(&mut self.ws, &ServerMessage::GameInfo { view: last_view.clone() }).await?,
-                    None => (),
+            ClientMessage::GameViewRequest => match &self.last_view {
+                Some(last_view) => {
+                    send(
+                        &mut self.ws,
+                        &ServerMessage::GameInfo {
+                            view: last_view.clone(),
+                        },
+                    )
+                    .await?
                 }
+                None => (),
             },
             _ => {
                 send(

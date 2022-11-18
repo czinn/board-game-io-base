@@ -136,10 +136,7 @@ impl<T: Game> Room<T> {
         }
     }
 
-    pub fn start_game(
-        &mut self,
-        user: &UserId,
-    ) -> Result<()> {
+    pub fn start_game(&mut self, user: &UserId) -> Result<()> {
         self.ensure_leader(user)?;
         if let RoomState::Lobby { config, .. } = &self.state {
             let game_state = T::new(config.clone(), self.users.len() as u32)?;
@@ -147,7 +144,8 @@ impl<T: Game> Room<T> {
             if players.len() != self.users.len() {
                 return Err(Error::WrongPlayerCount);
             }
-            let player_mapping = HashMap::from_iter(self.users.clone().into_iter().zip(players.into_iter()));
+            let player_mapping =
+                HashMap::from_iter(self.users.clone().into_iter().zip(players.into_iter()));
             self.state = RoomState::Game {
                 game_state,
                 player_mapping,
