@@ -38,6 +38,9 @@ pub enum ServerMessage {
         user_id: UserId,
         username: String,
     },
+    InvalidateToken {
+        token: ReconnectToken,
+    },
     UserInfo {
         users: Vec<UserInfo>,
     },

@@ -12,9 +12,12 @@ let users = [];
 let config;
 let view;
 let user;
+let reconnect_tokens;
+
+$: console.log(reconnect_tokens);
 
 let new_username;
-let rejoin_room_id;
+let go_to_room_id;
 
 function config_handler(event) {
   client.handle_config_update(event.detail);
@@ -36,6 +39,7 @@ function do_action(event) {
     bind:config={config}
     bind:user={user}
     bind:view={view}
+    bind:reconnect_tokens={reconnect_tokens}
     addr="ws://localhost:9002" />
   <h1>{game_name}</h1>
   {#if connecting}
@@ -54,11 +58,14 @@ function do_action(event) {
       </form>
       {#if room_id === null}
         <hr/>
-        <form on:submit|preventDefault={() => client.rejoin_room(rejoin_room_id) }>
-          <input placeholder="Room code" bind:value={rejoin_room_id}>
+        <form on:submit|preventDefault={() => client.go_to_room(go_to_room_id)}>
+          <input placeholder="Room code" bind:value={go_to_room_id}>
           <button type="submit">Join Room</button>
         </form>
       {/if}
+      {#each reconnect_tokens as token}
+        <button on:click={() => client.rejoin_room(token)}>Rejoin as {token.username}</button><br/>
+      {/each}
     {:else if config !== null}
       <p>
         Players:

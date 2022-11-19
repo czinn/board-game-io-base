@@ -81,7 +81,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                             rooms.get(&room).cloned()
                         };
                         match room_manager {
-                            Some(room_manager) => match room_manager.rejoin_room(token).await {
+                            Some(room_manager) => match room_manager.rejoin_room(token.clone()).await {
                                 Ok(subscription) => {
                                     return Ok(Self {
                                         ws,
@@ -90,7 +90,16 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                                         subscription,
                                         last_view: None,
                                     });
-                                }
+                                },
+                                Err(Error::InvalidReconnectToken) => {
+                                    send(
+                                        &mut ws,
+                                        &ServerMessage::InvalidateToken {
+                                            token,
+                                        },
+                                    )
+                                    .await?
+                                },
                                 Err(err) => {
                                     send(
                                         &mut ws,
@@ -99,9 +108,16 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                                         },
                                     )
                                     .await?
-                                }
+                                },
                             },
                             None => {
+                                send(
+                                    &mut ws,
+                                    &ServerMessage::InvalidateToken {
+                                        token,
+                                    },
+                                )
+                                .await?;
                                 send(
                                     &mut ws,
                                     &ServerMessage::Error {

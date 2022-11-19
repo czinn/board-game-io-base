@@ -10,12 +10,47 @@ import type { ClientMessage } from "./bindings/ClientMessage";
 import { onMount } from 'svelte';
 import { applyPatch } from 'fast-json-patch'
 
-function get_token(room: RoomId): ReconnectToken | null {
-  return window.localStorage.getItem("reconnect_token:" + room);
+export type ReconnectData = {
+  username: string,
+  token: ReconnectToken,
+};
+
+function get_tokens(room: RoomId): [ReconnectData] {
+  let tokens = JSON.parse(window.localStorage.getItem("reconnect_tokens:" + room));
+  if (tokens === null) {
+    return [];
+  }
+  return tokens;
 }
 
-function set_token(room: RoomId, token: ReconnectToken) {
-  window.localStorage.setItem("reconnect_token:" + room, token);
+function set_tokens(room: RoomId, tokens: [ReconnectData]) {
+  window.localStorage.setItem("reconnect_tokens:" + room, JSON.stringify(tokens));
+}
+
+function add_token(room: RoomId, username: string, token: ReconnectToken) {
+  let tokens = get_tokens(room);
+  let found = false;
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].token === token) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    tokens.push({username, token});
+    set_tokens(room, tokens);
+  }
+}
+
+function remove_token(room: RoomId, token: ReconnectToken) {
+  let tokens = get_tokens(room);
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].token === token) {
+      tokens.splice(i, 1);
+      set_tokens(room, tokens);
+      return;
+    }
+  }
 }
 
 function get_url_room(): RoomId | null {
@@ -45,6 +80,7 @@ export let username: string = null;
 export let users: UserInfo[] = [];
 export let config: any = null;
 export let view: any = null;
+export let reconnect_tokens: [ReconnectData] = [];
 
 // Private properties
 let ws: WebSocket;
@@ -64,12 +100,10 @@ onMount(() => {
     // Check if the URL has a room code in it
     let url_room = get_url_room();
     if (url_room) {
-      if (!rejoin_room(url_room)) {
-        connecting = false;
-      }
-    } else {
-      connecting = false;
+      room_id = url_room;
+      reconnect_tokens = get_tokens(url_room);
     }
+    connecting = false;
   };
 });
 
@@ -94,7 +128,12 @@ function handle_server_message(event: MessageEvent) {
     username = data.username;
     room_id = data.room_id;
     window.history.pushState("", "", "/" + data.room_id);
-    set_token(data.room_id, data.token);
+    add_token(data.room_id, data.username, data.token);
+    reconnect_tokens = get_tokens(data.room_id);
+  } else if (data.type === "invalidate_token") {
+    connecting = false;
+    remove_token(room_id, data.token);
+    reconnect_tokens = get_tokens(room_id);
   } else if (data.type === "user_info") {
     users = data.users;
   } else if (data.type === "room_info") {
@@ -130,15 +169,18 @@ export function join_room(username: string) {
   send_message({ type: "join_room", username, room: get_url_room() });
 }
 
-export function rejoin_room(room: RoomId): boolean {
+export function go_to_room(room: RoomId) {
   window.history.pushState("", "", "/" + room);
   room_id = room;
-  let token: ReconnectToken | null = get_token(room);
-  if (token === null) {
-    return false;
+  reconnect_tokens = get_tokens(room);
+}
+
+export function rejoin_room(reconnect_data: ReconnectData) {
+  if (room_id === null) {
+    return;
   }
-  send_message({ type: "rejoin_room", token, room });
-  return true;
+  send_message({ type: "rejoin_room", token: reconnect_data.token, room: room_id });
+  connecting = true;
 }
 
 function update_config(config: any) {

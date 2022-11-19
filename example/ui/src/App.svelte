@@ -14,6 +14,3 @@ import GameView from './GameView.svelte'
             let:view={view} view={view}
             let:do_action={do_action} on:do_action={do_action}/>
 </BoardGameUi>
-
-<style>
-</style>
