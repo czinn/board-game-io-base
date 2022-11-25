@@ -3,6 +3,7 @@ use rand::{
     Rng,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use ts_rs::TS;
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, PartialOrd, Ord, Serialize, Deserialize, TS)]
@@ -20,6 +21,12 @@ pub struct RoomId(String);
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UserId(pub u32);
+
+impl fmt::Display for UserId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "UserId({})", self.0)
+    }
+}
 
 impl ReconnectToken {
     pub fn new() -> Self {

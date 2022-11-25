@@ -136,6 +136,46 @@ impl<T: Game> Room<T> {
         }
     }
 
+    pub fn kick_user(&mut self, user: &UserId, target: &UserId) -> Result<()> {
+        self.ensure_leader(user)?;
+        match &self.state {
+            RoomState::Lobby { .. } => (),
+            RoomState::Game { player_mapping, .. } => {
+                if player_mapping.contains_key(target) {
+                    return Err(Error::UserIsPlayer);
+                }
+            }
+        }
+        let _ = self.user_data.remove(target).ok_or(Error::UserNotFound)?;
+        self.users.retain(|u| *u != *target);
+        Ok(())
+    }
+
+    pub fn reassign_player(
+        &mut self,
+        user: &UserId,
+        from_user: &UserId,
+        to_user: &UserId,
+    ) -> Result<()> {
+        self.ensure_leader(user)?;
+        match &mut self.state {
+            RoomState::Lobby { .. } => Err(Error::GameNotStarted),
+            RoomState::Game { player_mapping, .. } => {
+                if player_mapping.contains_key(to_user) {
+                    return Err(Error::UserIsAlreadyPlayer(*to_user));
+                }
+                let player_id = player_mapping.remove(from_user);
+                match player_id {
+                    Some(player_id) => {
+                        player_mapping.insert(*to_user, player_id);
+                        Ok(())
+                    }
+                    None => return Err(Error::UserIsNotPlayer(*from_user)),
+                }
+            }
+        }
+    }
+
     pub fn start_game(&mut self, user: &UserId) -> Result<()> {
         self.ensure_leader(user)?;
         if let RoomState::Lobby { config, .. } = &self.state {

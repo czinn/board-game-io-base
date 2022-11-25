@@ -79,6 +79,13 @@ pub enum ClientMessage {
         #[ts(type = "any")]
         config: Value,
     },
+    KickUser {
+        user: UserId,
+    },
+    ReassignPlayer {
+        from_user: UserId,
+        to_user: UserId,
+    },
     StartGame,
     DoAction {
         #[ts(type = "any")]

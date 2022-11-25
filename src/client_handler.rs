@@ -12,6 +12,7 @@ use crate::error::Error;
 use crate::game::Game;
 use crate::ids::*;
 use crate::protocol::{ClientMessage, ServerMessage};
+use crate::result::Result as MyResult;
 use crate::room_manager::{RoomManagerHandle, Subscription};
 
 pub struct ClientHandler<S: AsyncRead + AsyncWrite + Unpin, T: Game> {
@@ -81,43 +82,34 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                             rooms.get(&room).cloned()
                         };
                         match room_manager {
-                            Some(room_manager) => match room_manager.rejoin_room(token.clone()).await {
-                                Ok(subscription) => {
-                                    return Ok(Self {
-                                        ws,
-                                        room_id: room,
-                                        room_manager,
-                                        subscription,
-                                        last_view: None,
-                                    });
-                                },
-                                Err(Error::InvalidReconnectToken) => {
-                                    send(
-                                        &mut ws,
-                                        &ServerMessage::InvalidateToken {
-                                            token,
-                                        },
-                                    )
-                                    .await?
-                                },
-                                Err(err) => {
-                                    send(
-                                        &mut ws,
-                                        &ServerMessage::Error {
-                                            message: format!("{:?}", err),
-                                        },
-                                    )
-                                    .await?
-                                },
-                            },
+                            Some(room_manager) => {
+                                match room_manager.rejoin_room(token.clone()).await {
+                                    Ok(subscription) => {
+                                        return Ok(Self {
+                                            ws,
+                                            room_id: room,
+                                            room_manager,
+                                            subscription,
+                                            last_view: None,
+                                        });
+                                    }
+                                    Err(Error::InvalidReconnectToken) => {
+                                        send(&mut ws, &ServerMessage::InvalidateToken { token })
+                                            .await?
+                                    }
+                                    Err(err) => {
+                                        send(
+                                            &mut ws,
+                                            &ServerMessage::Error {
+                                                message: format!("{:?}", err),
+                                            },
+                                        )
+                                        .await?
+                                    }
+                                }
+                            }
                             None => {
-                                send(
-                                    &mut ws,
-                                    &ServerMessage::InvalidateToken {
-                                        token,
-                                    },
-                                )
-                                .await?;
+                                send(&mut ws, &ServerMessage::InvalidateToken { token }).await?;
                                 send(
                                     &mut ws,
                                     &ServerMessage::Error {
@@ -144,63 +136,42 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
         Err(TungsteniteError::ConnectionClosed)
     }
 
+    async fn handle_result(&mut self, result: MyResult<()>) -> Result<()> {
+        match result {
+            Ok(()) => Ok(()),
+            Err(err) => {
+                let error_message = match err {
+                    Error::InvalidAction(message) => ServerMessage::InvalidAction { message },
+                    _ => ServerMessage::Error {
+                        message: err.to_string(),
+                    },
+                };
+                send(&mut self.ws, &error_message).await
+            }
+        }
+    }
+
     async fn handle_client_message(&mut self, client_message: ClientMessage) -> Result<()> {
-        match client_message {
+        let result = match client_message {
             ClientMessage::UpdateConfig { config } => {
-                match self
-                    .room_manager
+                self.room_manager
                     .update_config(self.subscription.user_id, config)
                     .await
-                {
-                    Ok(()) => (),
-                    Err(err) => {
-                        send(
-                            &mut self.ws,
-                            &ServerMessage::Error {
-                                message: err.to_string(),
-                            },
-                        )
-                        .await?
-                    }
-                }
+            }
+            ClientMessage::KickUser { user: target } => {
+                self.room_manager
+                    .kick_user(self.subscription.user_id, target)
+                    .await
             }
             ClientMessage::StartGame => {
-                match self
-                    .room_manager
+                self.room_manager
                     .start_game(self.subscription.user_id)
                     .await
-                {
-                    Ok(()) => (),
-                    Err(err) => {
-                        send(
-                            &mut self.ws,
-                            &ServerMessage::Error {
-                                message: err.to_string(),
-                            },
-                        )
-                        .await?
-                    }
-                }
             }
             ClientMessage::DoAction { action } => {
-                match self
-                    .room_manager
+                self.room_manager
                     .do_action(self.subscription.user_id, action)
                     .await
-                {
-                    Ok(()) => (),
-                    Err(err) => {
-                        let error_message = match err {
-                            Error::InvalidAction(message) => {
-                                ServerMessage::InvalidAction { message }
-                            }
-                            _ => ServerMessage::Error {
-                                message: err.to_string(),
-                            },
-                        };
-                        send(&mut self.ws, &error_message).await?
-                    }
-                }
             }
             ClientMessage::GameViewRequest => match &self.last_view {
                 Some(last_view) => {
@@ -210,9 +181,10 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                             view: last_view.clone(),
                         },
                     )
-                    .await?
+                    .await?;
+                    Ok(())
                 }
-                None => (),
+                None => Ok(()),
             },
             _ => {
                 send(
@@ -221,11 +193,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                         message: "You're in a room".to_string(),
                     },
                 )
-                .await?
+                .await?;
+                Ok(())
             }
-        }
-
-        Ok(())
+        };
+        self.handle_result(result).await
     }
 
     pub async fn run(&mut self) -> Result<()> {

@@ -33,6 +33,17 @@ pub enum RoomManagerMessage {
         config: Value,
         resp: Responder<()>,
     },
+    KickUser {
+        user_id: UserId,
+        target: UserId,
+        resp: Responder<()>,
+    },
+    ReassignPlayer {
+        user_id: UserId,
+        from_user: UserId,
+        to_user: UserId,
+        resp: Responder<()>,
+    },
     StartGame {
         user_id: UserId,
         resp: Responder<()>,
@@ -132,6 +143,29 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                         }
                         Err(_) => Err(Error::ParseFailure),
                     };
+                    let _ = resp.send(result);
+                }
+                RoomManagerMessage::KickUser {
+                    user_id,
+                    target,
+                    resp,
+                } => {
+                    let result = self.room.kick_user(&user_id, &target);
+                    if result.is_ok() {
+                        users_dirty = true;
+                    }
+                    let _ = resp.send(result);
+                }
+                RoomManagerMessage::ReassignPlayer {
+                    user_id,
+                    from_user,
+                    to_user,
+                    resp,
+                } => {
+                    let result = self.room.reassign_player(&user_id, &from_user, &to_user);
+                    if result.is_ok() {
+                        users_dirty = true;
+                    }
                     let _ = resp.send(result);
                 }
                 RoomManagerMessage::StartGame { user_id, resp } => {
@@ -236,6 +270,30 @@ impl<T: Game> RoomManagerHandle<T> {
         self.send_message(|resp| RoomManagerMessage::UpdateConfig {
             user_id,
             config,
+            resp,
+        })
+        .await
+    }
+
+    pub async fn kick_user(&self, user_id: UserId, target: UserId) -> Result<()> {
+        self.send_message(|resp| RoomManagerMessage::KickUser {
+            user_id,
+            target,
+            resp,
+        })
+        .await
+    }
+
+    pub async fn reassign_player(
+        &self,
+        user_id: UserId,
+        from_user: UserId,
+        to_user: UserId,
+    ) -> Result<()> {
+        self.send_message(|resp| RoomManagerMessage::ReassignPlayer {
+            user_id,
+            from_user,
+            to_user,
             resp,
         })
         .await
