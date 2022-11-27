@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 
 use serde_json::Value;
 use tokio::sync::{mpsc, oneshot, watch};
+use tracing::{instrument, span, Level};
 
 use crate::error::Error;
 use crate::game::Game;
@@ -94,14 +95,18 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
         self.room_tx.send(self.room.lobby_info()).unwrap()
     }
 
+    #[instrument(skip(self))]
     fn update_game(&self) {
         let Self {
             room, view_watches, ..
         } = &self;
         for (user_id, (tx, _rx)) in view_watches.iter() {
-            let new_view = match room.user_view(user_id) {
-                Ok(view) => Some(serde_json::to_value(view).unwrap()),
-                Err(_) => None,
+            let new_view = {
+                let _span = span!(Level::INFO, "creating and serializing view").entered();
+                match room.user_view(user_id) {
+                    Ok(view) => Some(serde_json::to_value(view).unwrap()),
+                    Err(_) => None,
+                }
             };
             // TODO: error handling
             tx.send(new_view).unwrap()

@@ -7,6 +7,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::tungstenite::{error::Error as TungsteniteError, Result};
 use tokio_tungstenite::WebSocketStream;
+use tracing::{span, Level};
 
 use crate::error::Error;
 use crate::game::Game;
@@ -237,6 +238,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                 },
                 view_updated = self.subscription.game_view.changed() => {
                     if let Ok(()) = view_updated {
+                        let _span = span!(Level::INFO, "view_updated");
                         let view = (*self.subscription.game_view.borrow()).clone();
                         match view {
                             Some(view) => {
