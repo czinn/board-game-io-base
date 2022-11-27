@@ -92,4 +92,5 @@ pub enum ClientMessage {
         action: Value,
     },
     GameViewRequest,
+    ResetToLobby,
 }

@@ -173,6 +173,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     .start_game(self.subscription.user_id)
                     .await
             }
+            ClientMessage::ResetToLobby => {
+                self.room_manager
+                    .reset_to_lobby(self.subscription.user_id)
+                    .await
+            }
             ClientMessage::DoAction { action } => {
                 self.room_manager
                     .do_action(self.subscription.user_id, action)

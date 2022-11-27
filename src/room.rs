@@ -196,6 +196,12 @@ impl<T: Game> Room<T> {
         }
     }
 
+    pub fn reset_to_lobby(&mut self, user: &UserId) -> Result<()> {
+        self.ensure_leader(user)?;
+        self.state = RoomState::Lobby { config: T::Config::default() };
+        Ok(())
+    }
+
     pub fn user_view<'a>(&'a self, user: &UserId) -> Result<T::View<'a>> {
         if let RoomState::Game {
             game_state,

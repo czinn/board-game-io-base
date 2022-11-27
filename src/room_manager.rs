@@ -53,6 +53,10 @@ pub enum RoomManagerMessage {
         action: Value,
         resp: Responder<()>,
     },
+    ResetToLobby {
+        user_id: UserId,
+        resp: Responder<()>,
+    },
 }
 
 pub struct RoomManager<T: Game + Send + Sync + 'static> {
@@ -172,6 +176,15 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                 }
                 RoomManagerMessage::StartGame { user_id, resp } => {
                     let result = self.room.start_game(&user_id);
+                    if result.is_ok() {
+                        users_dirty = true;
+                        room_dirty = true;
+                        game_dirty = true;
+                    }
+                    let _ = resp.send(result);
+                }
+                RoomManagerMessage::ResetToLobby { user_id, resp } => {
+                    let result = self.room.reset_to_lobby(&user_id);
                     if result.is_ok() {
                         users_dirty = true;
                         room_dirty = true;
@@ -303,6 +316,11 @@ impl<T: Game> RoomManagerHandle<T> {
 
     pub async fn start_game(&self, user_id: UserId) -> Result<()> {
         self.send_message(|resp| RoomManagerMessage::StartGame { user_id, resp })
+            .await
+    }
+
+    pub async fn reset_to_lobby(&self, user_id: UserId) -> Result<()> {
+        self.send_message(|resp| RoomManagerMessage::ResetToLobby { user_id, resp })
             .await
     }
 
