@@ -7,10 +7,10 @@ use crate::ids::*;
 #[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export)]
 pub struct UserInfo {
-    id: UserId,
-    username: String,
-    leader: bool,
-    player_id: Option<PlayerId>,
+    pub id: UserId,
+    pub username: String,
+    pub leader: bool,
+    pub player_id: Option<PlayerId>,
 }
 
 impl UserInfo {

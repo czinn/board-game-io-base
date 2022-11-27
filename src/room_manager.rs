@@ -119,6 +119,7 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                                 .entry(user_data.id.clone())
                                 .or_insert_with(|| watch::channel(None));
                             users_dirty = true;
+                            game_dirty = true;
                             resp.send(Ok(Subscription {
                                 token: user_data.token.clone(),
                                 user_id: user_data.id.clone(),
@@ -165,6 +166,7 @@ impl<T: Game + Send + Sync + 'static> RoomManager<T> {
                     let result = self.room.reassign_player(&user_id, &from_user, &to_user);
                     if result.is_ok() {
                         users_dirty = true;
+                        game_dirty = true;
                     }
                     let _ = resp.send(result);
                 }

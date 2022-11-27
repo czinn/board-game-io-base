@@ -163,6 +163,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                     .kick_user(self.subscription.user_id, target)
                     .await
             }
+            ClientMessage::ReassignPlayer { from_user, to_user } => {
+                self.room_manager
+                    .reassign_player(self.subscription.user_id, from_user, to_user)
+                    .await
+            }
             ClientMessage::StartGame => {
                 self.room_manager
                     .start_game(self.subscription.user_id)
@@ -261,7 +266,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin, T: Game> ClientHandler<S, T> {
                 users_updated = users_watch.changed() => {
                     if let Ok(()) = users_updated {
                         let users = (*users_watch.borrow()).clone();
+                        let kicked = !users.iter().any(|info| info.id == self.subscription.user_id);
                         send(&mut self.ws, &ServerMessage::UserInfo { users }).await?;
+                        if kicked {
+                            break;
+                        }
                     }
                 },
             };
