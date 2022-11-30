@@ -55,6 +55,7 @@ impl<T: Game> Room<T> {
     pub fn join_room(&mut self, join_info: JoinInfo) -> Result<&UserData> {
         match join_info {
             JoinInfo::Username(username) => {
+                let username = username.trim();
                 // Ensure no existing user has that name
                 if self
                     .user_data
@@ -73,7 +74,7 @@ impl<T: Game> Room<T> {
                         user_id,
                         UserData {
                             id: user_id,
-                            username,
+                            username: username.to_string(),
                             token: ReconnectToken::new(),
                         },
                     );
